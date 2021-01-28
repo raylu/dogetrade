@@ -1,9 +1,15 @@
+import enum
+import random
 import sqlite3
 
 db = sqlite3.connect('dogetrade.db')
 db.row_factory = sqlite3.Row
 
-if __name__ == '__main__':
+class OrderType(enum.IntEnum):
+	BUY = 1
+	SELL = 2
+
+def main():
 	with db:
 		cur = db.execute('SELECT COUNT(*) FROM stocks')
 		[[count]] = cur.fetchall()
@@ -21,5 +27,19 @@ if __name__ == '__main__':
 				('DACH', 'Dachshund Enterprises'),
 				('YORK', 'Terrier Enterprises'),
 			])
+			for stock in db.execute('SELECT * FROM stocks'):
+				price = random.randint(100000, 1000000)
+				print('picking %.2f🍖 for %s (%s)' % (price / 10000, stock['ticker'], stock['name']))
+				db.executemany('INSERT INTO orders (stock_id, type, price, num_shares) VALUES (?, ?, ?, ?)', [
+					(stock['stock_id'], OrderType.BUY, price - 100, 1),
+					(stock['stock_id'], OrderType.BUY, price - 200, 5),
+					(stock['stock_id'], OrderType.BUY, price - 300, 10),
+					(stock['stock_id'], OrderType.SELL, price + 100, 1),
+					(stock['stock_id'], OrderType.SELL, price + 200, 5),
+					(stock['stock_id'], OrderType.SELL, price + 300, 10),
+				])
 		else:
 			print('found', count, 'stocks; doing nothing')
+
+if __name__ == '__main__':
+	main()
